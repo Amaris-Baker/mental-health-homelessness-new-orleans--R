@@ -79,7 +79,11 @@ for(var in barrier_vars) {
   }
 }
 cat("\n")
-
+model1 <- glm(service_uptake_factor ~ barrier_insurance + barrier_transportation + barrier_stigma +
+                barrier_negative_experiences + barrier_lack_knowledge +
+                barrier_meds_appointments + barrier_navigation,
+              data = data, family = binomial)
+summary (model1)
 # ========================================================================
 # HYPOTHESIS 2: SERVICE TYPES AND PERCEIVED ADEQUACY
 # ========================================================================
@@ -101,7 +105,7 @@ if("mh_resources_feelings" %in% names(data)) {
   print(adequacy_dist)
   cat("\n")
 }
-
+chisq.test(table(data$services_category, data$adequacy_cat))
 # ========================================================================
 # HYPOTHESIS 3: ADEQUACY PERCEPTIONS ACROSS SUBGROUPS
 # ========================================================================
@@ -125,7 +129,7 @@ if("age_group" %in% names(data)) {
   print(age_adequacy)
   cat("\n")
 }
-
+chisq.test(table(data$gender_cat, data$adequacy_cat))
 # ========================================================================
 # HYPOTHESIS 4: MH DIAGNOSIS TYPE/DURATION PREDICTING ADEQUACY
 # ========================================================================
@@ -140,7 +144,7 @@ if("mh_category" %in% names(data)) {
   print(mh_dist)
   cat("\n")
 }
-
+chisq.test(table(data$mh_category, data$adequacy_cat))
 # ========================================================================
 # HYPOTHESIS 5: TIME HOMELESS VS MH DIAGNOSIS DURATION
 # ========================================================================
@@ -153,6 +157,27 @@ cat("Time homeless distribution:\n")
 time_dist <- table(data$time_homeless_cat)
 print(time_dist)
 cat("\n")
+data <- data %>%
+  mutate(
+    mh_diagnosis_duration = pmax(
+      mh_depression_duration,
+      mh_anxiety_duration,
+      mh_bipolar_duration,
+      mh_schizophrenia_duration,
+      mh_ptsd_duration,
+      mh_other_duration,
+      na.rm = TRUE
+    ),
+    mh_diagnosis_duration_cat = case_when(
+      mh_diagnosis_duration == 1 ~ "<1 year",
+      mh_diagnosis_duration == 2 ~ "1–<3 years",
+      mh_diagnosis_duration == 3 ~ "3–<5 years",
+      mh_diagnosis_duration == 4 ~ ">5 years",
+      mh_diagnosis_duration == 5 ~ "Not sure/prefer not",
+      TRUE ~ NA_character_
+    )
+  )
+chisq.test(table(data$time_homeless_cat, data$mh_diagnosis_duration_cat))
 
 # ========================================================================
 # HYPOTHESIS 6: TIME HOMELESS VS ACCESSING SERVICES
@@ -165,12 +190,12 @@ cat("HA: Time homeless is associated with accessing mental health services\n\n")
 cat("Service access by time homeless:\n")
 time_service <- table(data$time_homeless_cat, data$service_uptake_factor)
 print(time_service)
-
 # Calculate percentages
 time_service_pct <- prop.table(time_service, margin = 1) * 100
 cat("\nPercentages by row:\n")
 print(round(time_service_pct, 1))
 cat("\n")
+chisq.test(table(data$time_homeless_cat, data$service_uptake_factor))
 
 # ========================================================================
 # HYPOTHESIS 7: TIME HOMELESS VS PERCEIVED ADEQUACY
@@ -184,7 +209,7 @@ cat("Perceived adequacy by time homeless:\n")
 time_adequacy <- table(data$time_homeless_cat, data$adequacy_cat)
 print(time_adequacy)
 cat("\n")
-
+chisq.test(table(data$time_homeless_cat, data$adequacy_cat))
 # ========================================================================
 # HYPOTHESIS 8: SERVICE TYPES DISTRIBUTION BY TIME HOMELESS
 # ========================================================================
@@ -199,7 +224,7 @@ if("services_category" %in% names(data)) {
   print(time_services)
   cat("\n")
 }
-
+chisq.test(table(data$time_homeless_cat, data$services_category))
 # ========================================================================
 # SUMMARY STATISTICS
 # ========================================================================
